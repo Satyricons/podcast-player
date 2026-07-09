@@ -1,0 +1,118 @@
+/* public/css/style.css */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Карточки подкастов */
+.podcast-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.podcast-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.podcast-card .card-img-top {
+    background: #e9ecef;
+    height: 150px;
+    object-fit: cover;
+}
+
+.podcast-card .card-body {
+    padding: 15px;
+}
+
+.podcast-card .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.podcast-card .view-details {
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Статус */
+#status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.bg-success {
+    background-color: #28a745;
+}
+
+.status-dot.bg-danger {
+    background-color: #dc3545;
+}
+
+.status-dot.bg-warning {
+    background-color: #ffc107;
+}
+
+/* Детали */
+#details {
+    min-height: 100px;
+}
+
+#details img {
+    border-radius: 8px;
+}
+
+/* Эпизоды */
+.episode-item {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-left: 3px solid #0d6efd;
+}
+
+.episode-item:hover {
+    background: #e9ecef;
+}
+
+.episode-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.podcast-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+    .podcast-card .card-img-top {
+        height: 120px;
+    }
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ Podcast Index API</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand">
+                <i class="fas fa-podcast"></i> Podcast Index
+            </span>
+            <span class="navbar-text text-white" id="status">
+                <span class="status-dot bg-warning"></span>
+                <span class="status-text">Загрузка...</span>
+            </span>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Левая колонка -->
+            <div class="col-md-8">
+                <!-- Поиск -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Поиск подкастов..." value="technology">
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100" id="searchBtn">
+                                    <i class="fas fa-search"></i> Найти
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Результаты -->
+                <div id="results">
+                    <div class="text-center py-5" id="loading" style="display:none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-2">Поиск подкастов...</p>
+                    </div>
+                    <div class="row" id="resultsList"></div>
+                </div>
+            </div>
+
+            <!-- Правая колонка -->
+            <div class="col-md-4">
+                <!-- Детали -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5><i class="fas fa-info-circle"></i> Детали</h5>
+                        <div id="details">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-hand-pointer fa-3x"></i>
+                                <p class="mt-2">Нажмите на подкаст</p>
+                                <small class="d-block">🔐 Аутентификация: SHA-1</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Статистика -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 text-center">
+                                <h3 id="totalResults">0</h3>
+                                <small class="text-muted">Найдено</small>
+                            </div>
+                            <div class="col-6 text-center">
+                                <span class="badge bg-success p-2">
+                                    <i class="fas fa-shield-alt"></i> SHA-1
+                                </span>
+                                <small class="d-block text-muted mt-1">Аутентификация</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Информация -->
+                <div class="card mt-3 bg-light">
+                    <div class="card-body">
+                        <small class="text-muted">
+                            <i class="fas fa-database"></i> 
+                            Podcast Index API
+                            <span class="d-block mt-1">
+                                <i class="fas fa-lock"></i> Web Crypto API
+                            </span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Наши скрипты (module) -->
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
