@@ -1,6 +1,6 @@
 // public/js/app.js
 import { PodcastIndexAPI } from './podcast-index-api.js';
-import { formatDuration, truncateText, debounce, safeGet } from './utils/helpers.js';
+import { formatDuration, formatTime, truncateText, debounce, safeGet } from './utils/helpers.js';
 
 /**
  * Главный класс приложения
@@ -16,14 +16,21 @@ class PodcastApp {
         this.totalResults = document.getElementById('totalResults');
         this.status = document.getElementById('status');
 
+        // Аудиоплеер в шапке
+        this.audioPlayer = document.getElementById('globalAudioPlayer');
+        this.headerPlayer = document.getElementById('headerPlayer');
+        this.playPauseBtn = document.getElementById('playPauseBtn');
+        this.progressBar = document.getElementById('progressBar');
+        this.timeDisplay = document.getElementById('timeDisplay');
+        this.currentTrackTitle = document.getElementById('currentTrackTitle');
+
         // API клиент
         this.api = new PodcastIndexAPI();
 
-        // Состояние
-        this.currentResults = [];
-        this.currentOffset = 0;
-        this.hasMore = true;
-        this.isLoading = false;
+        // Состояние плеера
+        this.isPlaying = false;
+        this.currentTrack = null;
+        this.isDragging = false;
 
         // Инициализация
         this.init();
@@ -33,7 +40,7 @@ class PodcastApp {
      * Инициализация приложения
      */
     async init() {
-        // Настройка обработчиков
+        // Обработчики поиска
         if (this.searchBtn) {
             this.searchBtn.addEventListener('click', () => this.search());
         }
@@ -42,9 +49,28 @@ class PodcastApp {
             this.searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.search();
             });
-
             const debouncedSearch = debounce(() => this.search(), 500);
             this.searchInput.addEventListener('input', debouncedSearch);
+        }
+
+        // Обработчики плеера
+        if (this.audioPlayer) {
+            this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
+            this.audioPlayer.addEventListener('ended', () => this.onAudioEnd());
+            this.audioPlayer.addEventListener('loadedmetadata', () => this.updateTimeDisplay());
+        }
+
+        if (this.progressBar) {
+            this.progressBar.addEventListener('input', (e) => {
+                this.isDragging = true;
+            });
+            this.progressBar.addEventListener('change', (e) => {
+                if (this.audioPlayer && this.audioPlayer.duration) {
+                    const value = parseFloat(e.target.value);
+                    this.audioPlayer.currentTime = (value / 100) * this.audioPlayer.duration;
+                }
+                this.isDragging = false;
+            });
         }
 
         // Инициализация API
@@ -52,7 +78,6 @@ class PodcastApp {
         
         if (initialized) {
             this.updateStatus('✅ Готов', 'success');
-            // Первый поиск
             this.search();
         } else {
             this.updateStatus('❌ Ошибка', 'danger');
@@ -74,11 +99,8 @@ class PodcastApp {
      * Поиск подкастов
      */
     async search() {
-        if (this.isLoading) return;
-        
         const query = this.searchInput?.value?.trim() || 'podcast';
         
-        this.isLoading = true;
         this.showLoading(true);
         if (this.resultsList) {
             this.resultsList.innerHTML = '';
@@ -104,7 +126,6 @@ class PodcastApp {
                 `;
             }
         } finally {
-            this.isLoading = false;
             this.showLoading(false);
         }
     }
@@ -129,8 +150,7 @@ class PodcastApp {
 
         this.resultsList.innerHTML = feeds.map(feed => `
             <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card podcast-card h-100" 
-                     onclick="app.showDetails(${feed.id})">
+                <div class="card podcast-card h-100" onclick="app.showDetails(${feed.id})">
                     ${feed.image ? `
                         <img src="${feed.image}" 
                              class="card-img-top" 
@@ -208,9 +228,6 @@ class PodcastApp {
                             ${Object.values(feed.categories).join(', ')}
                         </span>
                     ` : ''}
-                    ${feed.explicit ? `
-                        <span class="badge bg-warning text-dark">🔞 Explicit</span>
-                    ` : ''}
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
                     ${feed.link ? `
@@ -223,11 +240,9 @@ class PodcastApp {
                             <i class="fas fa-rss"></i> RSS
                         </button>
                     ` : ''}
-                    ${feed.id ? `
-                        <button class="btn btn-sm btn-success" onclick="app.showEpisodes(${feed.id})">
-                            <i class="fas fa-list"></i> Эпизоды
-                        </button>
-                    ` : ''}
+                    <button class="btn btn-sm btn-success" onclick="app.showEpisodes(${feed.id})">
+                        <i class="fas fa-list"></i> Эпизоды
+                    </button>
                 </div>
             `;
 
@@ -252,7 +267,7 @@ class PodcastApp {
         `;
 
         try {
-            const data = await this.api.getEpisodes(id, 10);
+            const data = await this.api.getEpisodes(id, 20);
             const items = data.items || [];
 
             if (items.length === 0) {
@@ -269,17 +284,34 @@ class PodcastApp {
                 <h6>📻 Эпизоды (${items.length})</h6>
                 <div class="episode-list">
                     ${items.map((ep, index) => `
-                        <div class="episode-item" onclick="app.showEpisodeDetails('${ep.id || ep.guid}')">
+                        <div class="episode-item">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
+                                <div class="flex-grow-1 me-2">
                                     <div class="fw-bold">${index + 1}. ${ep.title || 'Без названия'}</div>
                                     <div class="small text-muted">
                                         ${ep.pubDate ? new Date(ep.pubDate).toLocaleDateString('ru-RU') : ''}
                                         ${ep.duration ? ` • ${formatDuration(ep.duration)}` : ''}
                                     </div>
                                 </div>
-                                <span class="badge bg-secondary">▶</span>
+                                <div class="d-flex gap-1 flex-shrink-0">
+                                    ${ep.enclosureUrl ? `
+                                        <button class="btn btn-sm btn-success play-episode-btn" 
+                                                onclick="event.stopPropagation(); app.playEpisode('${ep.enclosureUrl}', '${ep.title || 'Эпизод'}')">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
                             </div>
+                            ${ep.description ? `
+                                <div class="small text-muted mt-1">${truncateText(ep.description, 100)}</div>
+                            ` : ''}
+                            ${ep.enclosureUrl ? `
+                                <div class="mt-1">
+                                    <a href="${ep.enclosureUrl}" class="small text-muted" download>
+                                        <i class="fas fa-download"></i> Скачать
+                                    </a>
+                                </div>
+                            ` : ''}
                         </div>
                     `).join('')}
                 </div>
@@ -298,25 +330,141 @@ class PodcastApp {
         }
     }
 
+    // ==================== АУДИОПЛЕЕР (в шапке) ====================
+
     /**
-     * Показать детали эпизода
+     * Воспроизведение эпизода
      */
-    async showEpisodeDetails(id) {
-        // Просто показываем информацию
-        this.detailsDiv.innerHTML = `
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                Информация об эпизоде (ID: ${id})
-            </div>
-            <button class="btn btn-sm btn-secondary" onclick="window.history.back()">
-                <i class="fas fa-arrow-left"></i> Назад
-            </button>
-        `;
+    playEpisode(url, title) {
+        if (!url) {
+            console.warn('⚠️ Нет URL для воспроизведения');
+            return;
+        }
+
+        this.currentTrack = { url, title };
+        
+        // Показываем плеер в шапке
+        if (this.headerPlayer) {
+            this.headerPlayer.style.display = 'block';
+        }
+        
+        if (this.currentTrackTitle) {
+            this.currentTrackTitle.textContent = title || 'Эпизод';
+        }
+
+        // Загружаем и воспроизводим
+        if (this.audioPlayer) {
+            this.audioPlayer.src = url;
+            this.audioPlayer.load();
+            this.audioPlayer.play()
+                .then(() => {
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                })
+                .catch(e => {
+                    console.warn('Автовоспроизведение заблокировано:', e);
+                    this.isPlaying = false;
+                    this.updatePlayButton();
+                });
+        }
+
+        // Прокручиваем к шапке на мобильных
+        if (window.innerWidth < 768) {
+            document.querySelector('.navbar')?.scrollIntoView({ behavior: 'smooth' });
+        }
     }
 
     /**
-     * Обновление статуса
+     * Переключение воспроизведения (play/pause)
      */
+    togglePlay() {
+        if (!this.audioPlayer) return;
+        
+        if (this.isPlaying) {
+            this.audioPlayer.pause();
+            this.isPlaying = false;
+        } else {
+            this.audioPlayer.play()
+                .then(() => {
+                    this.isPlaying = true;
+                })
+                .catch(e => console.warn('Не удалось воспроизвести:', e));
+        }
+        this.updatePlayButton();
+    }
+
+    /**
+     * Обновление кнопки play/pause
+     */
+    updatePlayButton() {
+        if (!this.playPauseBtn) return;
+        const icon = this.playPauseBtn.querySelector('i');
+        if (icon) {
+            icon.className = this.isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        }
+    }
+
+    /**
+     * Обновление прогресса
+     */
+    updateProgress() {
+        if (!this.audioPlayer || !this.progressBar || this.isDragging) return;
+        
+        if (this.audioPlayer.duration) {
+            const progress = (this.audioPlayer.currentTime / this.audioPlayer.duration) * 100;
+            this.progressBar.value = progress;
+        }
+        this.updateTimeDisplay();
+    }
+
+    /**
+     * Обновление отображения времени
+     */
+    updateTimeDisplay() {
+        if (!this.audioPlayer || !this.timeDisplay) return;
+        
+        const current = formatTime(this.audioPlayer.currentTime || 0);
+        const total = formatTime(this.audioPlayer.duration || 0);
+        this.timeDisplay.textContent = `${current} / ${total}`;
+    }
+
+    /**
+     * Окончание воспроизведения
+     */
+    onAudioEnd() {
+        this.isPlaying = false;
+        this.updatePlayButton();
+        if (this.progressBar) {
+            this.progressBar.value = 0;
+        }
+        this.updateTimeDisplay();
+    }
+
+    /**
+     * Остановка воспроизведения
+     */
+    stopAudio() {
+        if (this.audioPlayer) {
+            this.audioPlayer.pause();
+            this.audioPlayer.currentTime = 0;
+            this.isPlaying = false;
+            this.updatePlayButton();
+            if (this.progressBar) {
+                this.progressBar.value = 0;
+            }
+            this.updateTimeDisplay();
+        }
+        if (this.headerPlayer) {
+            this.headerPlayer.style.display = 'none';
+        }
+        this.currentTrack = null;
+        if (this.currentTrackTitle) {
+            this.currentTrackTitle.textContent = 'Нет трека';
+        }
+    }
+
+    // ==================== СТАТИСТИКА И СТАТУС ====================
+
     updateStatus(message, type = 'success') {
         if (!this.status) return;
         const dot = this.status.querySelector('.status-dot');
@@ -330,9 +478,6 @@ class PodcastApp {
         }
     }
 
-    /**
-     * Обновление статистики
-     */
     updateStats(data) {
         const feeds = data.feeds || [];
         if (this.totalResults) {
@@ -340,13 +485,14 @@ class PodcastApp {
         }
     }
 
-    /**
-     * Показать/скрыть загрузку
-     */
     showLoading(show) {
         if (this.loading) {
             this.loading.style.display = show ? 'block' : 'none';
         }
+    }
+
+    toggleTheme() {
+        document.body.classList.toggle('dark-theme');
     }
 }
 

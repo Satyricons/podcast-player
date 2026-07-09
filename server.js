@@ -39,20 +39,12 @@ app.get('/api/keys', (req, res) => {
     }
 });
 
-// Прокси для Podcast Index API (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// Прокси для Podcast Index API
 app.get('/api/proxy/*', async (req, res) => {
     try {
-        // Получаем путь из URL (всё что после /api/proxy/)
         const targetPath = req.params[0];
-        
-        // Получаем все параметры запроса из req.query
         const queryParams = req.query;
         
-        console.log(`🔄 Прокси запрос:`);
-        console.log(`   Путь: ${targetPath}`);
-        console.log(`   Параметры:`, queryParams);
-        
-        // Получаем заголовки аутентификации
         const authDate = req.headers['x-auth-date'];
         const authKey = req.headers['x-auth-key'];
         const authHash = req.headers['authorization'];
@@ -63,18 +55,13 @@ app.get('/api/proxy/*', async (req, res) => {
             });
         }
 
-        // Строим URL для Podcast Index API с параметрами
         const baseUrl = 'https://api.podcastindex.org/api/1.0';
         const url = new URL(`${baseUrl}/${targetPath}`);
         
-        // Добавляем все параметры запроса
         Object.keys(queryParams).forEach(key => {
             url.searchParams.append(key, queryParams[key]);
         });
-        
-        console.log(`📡 Полный URL: ${url.toString()}`);
 
-        // Выполняем запрос
         const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
@@ -87,15 +74,7 @@ app.get('/api/proxy/*', async (req, res) => {
             }
         });
 
-        // Получаем ответ
         const data = await response.json();
-        
-        console.log(`   Статус: ${response.status}`);
-        if (response.status !== 200) {
-            console.log(`   Ошибка:`, data);
-        }
-        
-        // Отправляем ответ клиенту
         res.status(response.status).json(data);
         
     } catch (error) {
@@ -114,6 +93,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`\n🚀 Сервер запущен: http://localhost:${PORT}`);
     console.log(`📡 Podcast Index API настроен`);
-    console.log(`\n📋 Тестовый запрос:`);
-    console.log(`   http://localhost:${PORT}/api/proxy/search/byterm?q=technology&max=5`);
 });

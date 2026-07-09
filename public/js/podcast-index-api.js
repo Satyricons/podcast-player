@@ -1,5 +1,9 @@
 // public/js/podcast-index-api.js
 
+/**
+ * Клиент для Podcast Index API
+ * Использует Web Crypto API + SHA-1 для аутентификации
+ */
 export class PodcastIndexAPI {
     constructor() {
         this.apiKey = null;
@@ -85,22 +89,16 @@ export class PodcastIndexAPI {
     async request(endpoint, params = {}) {
         this.ensureInitialized();
 
-        // Строим URL с параметрами
         const urlPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         const url = new URL(`${this.baseURL}${urlPath}`, window.location.origin);
         
-        // Добавляем все параметры
         Object.keys(params).forEach(key => {
             if (params[key] !== undefined && params[key] !== null) {
                 url.searchParams.append(key, params[key]);
             }
         });
 
-        // Генерируем заголовки аутентификации
         const authHeaders = await this.generateAuthHeaders();
-
-        console.log(`📡 Запрос: ${url.toString()}`);
-        console.log(`📋 Параметры:`, params);
 
         try {
             const response = await fetch(url.toString(), {
@@ -129,11 +127,7 @@ export class PodcastIndexAPI {
     async search(query, max = 20) {
         if (!query) throw new Error('Поисковый запрос не может быть пустым');
         console.log(`🔍 Поиск: "${query}"...`);
-        // ВАЖНО: параметры передаются как объект params
-        const result = await this.request('search/byterm', { 
-            q: query, 
-            max: max 
-        });
+        const result = await this.request('search/byterm', { q: query, max: max });
         console.log(`✅ Найдено: ${result.feeds?.length || 0} подкастов`);
         return result;
     }
@@ -158,20 +152,6 @@ export class PodcastIndexAPI {
         console.log('🏆 Получение популярных подкастов...');
         const result = await this.request('podcasts/top', { max: max });
         console.log(`✅ Найдено: ${result.feeds?.length || 0} подкастов`);
-        return result;
-    }
-
-    async getRandomPodcasts(max = 10) {
-        console.log('🎲 Получение случайных подкастов...');
-        const result = await this.request('podcasts/random', { max: max });
-        console.log(`✅ Найдено: ${result.feeds?.length || 0} подкастов`);
-        return result;
-    }
-
-    async getCategories() {
-        console.log('📂 Получение категорий...');
-        const result = await this.request('categories/list');
-        console.log(`✅ Найдено: ${result.categories?.length || 0} категорий`);
         return result;
     }
 }

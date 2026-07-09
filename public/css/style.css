@@ -2,6 +2,49 @@
 body {
     background-color: #f8f9fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Тёмная тема */
+body.dark-theme {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+}
+
+body.dark-theme .card {
+    background-color: #16213e;
+    color: #e0e0e0;
+    border-color: #2a2a4a;
+}
+
+body.dark-theme .card .text-muted {
+    color: #a0a0b0 !important;
+}
+
+body.dark-theme .form-control,
+body.dark-theme .form-select {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+    border-color: #3a3a5a;
+}
+
+body.dark-theme .form-control:focus {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+}
+
+body.dark-theme .episode-item {
+    background-color: #1a1a2e;
+    border-color: #3a3a5a;
+}
+
+body.dark-theme .episode-item:hover {
+    background-color: #16213e;
+}
+
+body.dark-theme #playerContainer {
+    background-color: #16213e;
+    border-color: #3a3a5a;
 }
 
 /* Карточки подкастов */
@@ -71,28 +114,67 @@ body {
     background-color: #ffc107;
 }
 
-/* Детали */
-#details {
-    min-height: 100px;
+/* АУДИОПЛЕЕР В ШАПКЕ */
+.audio-player-container {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-#details img {
-    border-radius: 8px;
+.audio-player-container .form-range {
+    width: 150px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.audio-player-container .form-range::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.audio-player-container .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.audio-player-container .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#currentTrackTitle {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Эпизоды */
 .episode-item {
-    padding: 8px 12px;
-    margin-bottom: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
     background: #f8f9fa;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
+    border-radius: 8px;
     border-left: 3px solid #0d6efd;
+    transition: background 0.2s;
 }
 
 .episode-item:hover {
     background: #e9ecef;
+}
+
+.episode-item .play-episode-btn {
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .episode-list {
@@ -106,6 +188,17 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .podcast-card {
     animation: fadeIn 0.3s ease-out;
 }
@@ -114,5 +207,33 @@ body {
 @media (max-width: 768px) {
     .podcast-card .card-img-top {
         height: 120px;
+    }
+    
+    .navbar .container-fluid {
+        flex-wrap: wrap;
+    }
+    
+    .audio-player-container {
+        width: 100%;
+        margin-top: 8px;
+    }
+    
+    .audio-player-container .form-range {
+        width: 80px;
+    }
+    
+    #currentTrackTitle {
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 576px) {
+    .audio-player-container .d-flex {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .audio-player-container .form-range {
+        width: 100px;
     }
 }

@@ -11,6 +11,16 @@ export function formatDuration(seconds) {
 }
 
 /**
+ * Форматирование времени для аудиоплеера
+ */
+export function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+/**
  * Обрезка текста до заданной длины
  */
 export function truncateText(text, maxLength = 80) {
