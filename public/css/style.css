@@ -1,83 +1,68 @@
-/* public/css/style.css */
 body {
     background-color: #f8f9fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Тёмная тема */
 body.dark-theme {
     background-color: #1a1a2e;
     color: #e0e0e0;
 }
-
 body.dark-theme .card {
     background-color: #16213e;
     color: #e0e0e0;
     border-color: #2a2a4a;
 }
-
 body.dark-theme .card .text-muted {
     color: #a0a0b0 !important;
 }
-
 body.dark-theme .form-control,
 body.dark-theme .form-select {
     background-color: #1a1a2e;
     color: #e0e0e0;
     border-color: #3a3a5a;
 }
-
 body.dark-theme .form-control:focus {
     background-color: #1a1a2e;
     color: #e0e0e0;
 }
-
 body.dark-theme .episode-item {
     background-color: #1a1a2e;
     border-color: #3a3a5a;
 }
-
 body.dark-theme .episode-item:hover {
     background-color: #16213e;
 }
-
 body.dark-theme #playerContainer {
     background-color: #16213e;
     border-color: #3a3a5a;
 }
 
-/* Карточки подкастов */
 .podcast-card {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: none;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
-
 .podcast-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
-
 .podcast-card .card-img-top {
     background: #e9ecef;
     height: 150px;
     object-fit: cover;
 }
-
 .podcast-card .card-body {
     padding: 15px;
 }
-
 .podcast-card .card-title {
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 4px;
 }
-
 .podcast-card .view-details {
     border-radius: 50%;
     width: 32px;
@@ -88,47 +73,39 @@ body.dark-theme #playerContainer {
     justify-content: center;
 }
 
-/* Статус */
 #status {
     display: flex;
     align-items: center;
     gap: 6px;
 }
-
 .status-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
     display: inline-block;
 }
-
 .status-dot.bg-success {
     background-color: #28a745;
 }
-
 .status-dot.bg-danger {
     background-color: #dc3545;
 }
-
 .status-dot.bg-warning {
     background-color: #ffc107;
 }
 
-/* АУДИОПЛЕЕР В ШАПКЕ */
 .audio-player-container {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     padding: 6px 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 .audio-player-container .form-range {
     width: 150px;
     height: 4px;
     background: rgba(255, 255, 255, 0.3);
     border-radius: 2px;
 }
-
 .audio-player-container .form-range::-webkit-slider-thumb {
     width: 12px;
     height: 12px;
@@ -136,16 +113,13 @@ body.dark-theme #playerContainer {
     border-radius: 50%;
     cursor: pointer;
 }
-
 .audio-player-container .btn-outline-light {
     border-color: rgba(255, 255, 255, 0.3);
     color: #fff;
 }
-
 .audio-player-container .btn-outline-light:hover {
     background: rgba(255, 255, 255, 0.2);
 }
-
 #currentTrackTitle {
     max-width: 150px;
     overflow: hidden;
@@ -153,7 +127,6 @@ body.dark-theme #playerContainer {
     white-space: nowrap;
 }
 
-/* Эпизоды */
 .episode-item {
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -162,11 +135,9 @@ body.dark-theme #playerContainer {
     border-left: 3px solid #0d6efd;
     transition: background 0.2s;
 }
-
 .episode-item:hover {
     background: #e9ecef;
 }
-
 .episode-item .play-episode-btn {
     border-radius: 50%;
     width: 32px;
@@ -176,18 +147,21 @@ body.dark-theme #playerContainer {
     align-items: center;
     justify-content: center;
 }
-
 .episode-list {
     max-height: 400px;
     overflow-y: auto;
 }
 
-/* Анимации */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
-
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -198,41 +172,33 @@ body.dark-theme #playerContainer {
         transform: translateY(0);
     }
 }
-
 .podcast-card {
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Адаптив */
 @media (max-width: 768px) {
     .podcast-card .card-img-top {
         height: 120px;
     }
-    
     .navbar .container-fluid {
         flex-wrap: wrap;
     }
-    
     .audio-player-container {
         width: 100%;
         margin-top: 8px;
     }
-    
     .audio-player-container .form-range {
         width: 80px;
     }
-    
     #currentTrackTitle {
         max-width: 100px;
     }
 }
-
 @media (max-width: 576px) {
     .audio-player-container .d-flex {
         flex-wrap: wrap;
         justify-content: center;
     }
-    
     .audio-player-container .form-range {
         width: 100px;
     }
