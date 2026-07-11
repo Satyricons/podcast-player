@@ -1,11 +1,10 @@
 {
-  "name": "podcast-index-api-client",
+  "name": "podcast-player-backend",
   "version": "1.0.0",
-  "description": "Клиент для Podcast Index API с Web Crypto API + SHA-1",
+  "description": "API прокси для Podcast Index",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "dotenv": "^16.3.1",

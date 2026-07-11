@@ -9,38 +9,30 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- НАВИГАЦИЯ С АУДИОПЛЕЕРОМ -->
+    <!-- Навигация с аудиоплеером -->
     <nav class="navbar navbar-dark bg-primary">
         <div class="container-fluid">
             <div class="d-flex align-items-center w-100 flex-wrap">
-                <!-- Логотип -->
                 <span class="navbar-brand me-3">
                     <i class="fas fa-podcast"></i> Podcast Index
                 </span>
-                
-                <!-- Статус -->
                 <span class="navbar-text text-white me-3" id="status">
                     <span class="status-dot bg-warning"></span>
                     <span class="status-text">Загрузка...</span>
                 </span>
-
-                <!-- АУДИОПЛЕЕР (в шапке) -->
                 <div class="audio-player-container ms-auto" id="headerPlayer" style="display: none;">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <button class="btn btn-sm btn-outline-light" id="playPauseBtn" onclick="app.togglePlay()">
                             <i class="fas fa-play"></i>
                         </button>
                         <span class="text-white small" id="currentTrackTitle">Нет трека</span>
-                        <input type="range" class="form-range" id="progressBar" 
-                               min="0" max="100" value="0" style="width: 150px;">
+                        <input type="range" class="form-range" id="progressBar" min="0" max="100" value="0" style="width: 150px;">
                         <span class="text-white small" id="timeDisplay">0:00 / 0:00</span>
                         <button class="btn btn-sm btn-outline-light" onclick="app.stopAudio()">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
-
-                <!-- Кнопка переключения темы (опционально) -->
                 <button class="btn btn-sm btn-outline-light ms-2" onclick="app.toggleTheme()">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -48,15 +40,10 @@
         </div>
     </nav>
 
-    <!-- СКРЫТЫЙ АУДИОЭЛЕМЕНТ -->
-    <audio id="globalAudioPlayer" style="display: none;"></audio>
-
     <!-- Основной контент -->
     <div class="container mt-4">
         <div class="row">
-            <!-- Левая колонка -->
             <div class="col-md-8">
-                <!-- Поиск -->
                 <div class="card shadow-sm mb-3">
                     <div class="card-body">
                         <div class="row g-2">
@@ -71,22 +58,15 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Результаты -->
                 <div id="results">
                     <div class="text-center py-5" id="loading" style="display:none;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Загрузка...</span>
-                        </div>
+                        <div class="spinner-border text-primary" role="status"></div>
                         <p class="mt-2">Поиск подкастов...</p>
                     </div>
                     <div class="row" id="resultsList"></div>
                 </div>
             </div>
-
-            <!-- Правая колонка -->
             <div class="col-md-4">
-                <!-- Детали -->
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h5><i class="fas fa-info-circle"></i> Детали</h5>
@@ -99,8 +79,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Статистика -->
                 <div class="card mt-3">
                     <div class="card-body">
                         <div class="row">
@@ -121,10 +99,8 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
+    <audio id="globalAudioPlayer" style="display: none;"></audio>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Наши скрипты -->
     <script type="module" src="/js/app.js"></script>
 </body>
 </html>
