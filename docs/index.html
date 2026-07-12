@@ -21,7 +21,7 @@
                     <span class="status-text">Загрузка...</span>
                 </span>
                 
-                <!-- === АУДИОПЛЕЕР В ШАПКЕ (расширенный) === -->
+                <!-- АУДИОПЛЕЕР В ШАПКЕ -->
                 <div class="audio-player-container ms-auto" id="headerPlayer" style="display: none;">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <!-- Кнопка Play/Pause -->
@@ -38,7 +38,6 @@
                         <!-- Время -->
                         <span class="text-white small" id="timeDisplay">0:00 / 0:00</span>
                         
-                        <!-- === НОВЫЕ ЭЛЕМЕНТЫ === -->
                         <!-- Скорость воспроизведения -->
                         <div class="btn-group btn-group-sm" id="speedGroup">
                             <button class="btn btn-outline-light speed-btn active" data-speed="1" onclick="app.setPlaybackRate(1)">1x</button>
@@ -115,12 +114,13 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="card mt-3">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-6 text-center">
-                                <h3 id="totalResults">0</h3>
-                                <small class="text-muted">Найдено</small>
+                                <h3 id="totalResults">0 / 0</h3>
+                                <small class="text-muted">Загружено / Всего</small>
                             </div>
                             <div class="col-6 text-center">
                                 <span class="badge bg-success p-2">
@@ -131,6 +131,7 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- Избранное -->
                 <div class="card mt-3">
                     <div class="card-body">

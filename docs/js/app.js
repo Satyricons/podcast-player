@@ -6,7 +6,7 @@ const API_BASE = 'https://podcast-player-backend.onrender.com';
 
 class PodcastApp {
     constructor() {
-        // ... существующие DOM элементы ...
+        // DOM элементы
         this.searchInput = document.getElementById('searchInput');
         this.searchBtn = document.getElementById('searchBtn');
         this.resultsList = document.getElementById('resultsList');
@@ -37,6 +37,15 @@ class PodcastApp {
         this.playlist = [];
         this.favorites = new Set();
 
+        // === ПАГИНАЦИЯ ===
+        this.currentQuery = '';
+        this.currentOffset = 0;
+        this.totalResultsCount = 0;
+        this.hasMore = true;
+        this.isLoadingMore = false;
+        this.resultsPerPage = 20;
+        this.allFeeds = [];
+
         // Загружаем сохранённые данные
         this.loadFromStorage();
 
@@ -48,14 +57,12 @@ class PodcastApp {
 
     loadFromStorage() {
         try {
-            // Плейлист
             const savedPlaylist = localStorage.getItem('playlist');
             if (savedPlaylist) {
                 this.playlist = JSON.parse(savedPlaylist);
                 this.updatePlaylistUI();
             }
 
-            // Скорость
             const savedRate = localStorage.getItem('playbackRate');
             if (savedRate) {
                 this.playbackRate = parseFloat(savedRate);
@@ -65,7 +72,6 @@ class PodcastApp {
                 this.updateSpeedButtons();
             }
 
-            // Громкость
             const savedVolume = localStorage.getItem('volume');
             if (savedVolume !== null) {
                 const vol = parseFloat(savedVolume);
@@ -75,13 +81,10 @@ class PodcastApp {
                 }
             }
 
-            // Избранное
             const savedFavorites = localStorage.getItem('favorites');
             if (savedFavorites) {
                 this.favorites = new Set(JSON.parse(savedFavorites));
             }
-
-            // Прогресс восстанавливается при загрузке трека
         } catch (e) {
             console.warn('Ошибка загрузки из localStorage:', e);
         }
@@ -101,7 +104,6 @@ class PodcastApp {
     // ==================== ПЛЕЙЛИСТ ====================
 
     addToPlaylist(item) {
-        // Проверяем, нет ли уже в плейлисте
         if (!this.playlist.some(p => p.url === item.url)) {
             this.playlist.push(item);
             this.saveToStorage();
@@ -167,6 +169,8 @@ class PodcastApp {
         }
         this.saveToStorage();
         this.updateFavoritesUI();
+        // Обновляем карточки, если они есть на странице
+        this.updateFavoriteButtons();
     }
 
     isFavorite(podcastId) {
@@ -182,7 +186,6 @@ class PodcastApp {
             return;
         }
 
-        // Показываем только ID, можно расширить до загрузки названий
         container.innerHTML = [...this.favorites].map(id => `
             <div class="favorite-item d-flex justify-content-between align-items-center p-1">
                 <span class="small">ID: ${id}</span>
@@ -191,6 +194,17 @@ class PodcastApp {
                 </button>
             </div>
         `).join('');
+    }
+
+    updateFavoriteButtons() {
+        // Обновляем все кнопки избранного на странице
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            const id = btn.dataset.id;
+            const isFav = this.isFavorite(id);
+            btn.classList.toggle('btn-warning', isFav);
+            btn.classList.toggle('btn-outline-secondary', !isFav);
+            btn.innerHTML = `<i class="fas fa-star"></i>`;
+        });
     }
 
     // ==================== СКОРОСТЬ И ГРОМКОСТЬ ====================
@@ -228,7 +242,7 @@ class PodcastApp {
         }
     }
 
-    // ==================== АУДИОПЛЕЕР (обновлённый) ====================
+    // ==================== АУДИОПЛЕЕР ====================
 
     playEpisode(url, title, podcastName = '') {
         if (!url) {
@@ -236,7 +250,6 @@ class PodcastApp {
             return;
         }
 
-        // Добавляем в плейлист, если ещё не там
         this.addToPlaylist({ url, title, podcastName });
 
         if (this.currentTrack && this.currentTrack.url === url) {
@@ -259,7 +272,6 @@ class PodcastApp {
             this.audioPlayer.src = url;
             this.audioPlayer.load();
 
-            // Восстанавливаем прогресс
             const progressKey = `progress_${url}`;
             const savedTime = parseFloat(localStorage.getItem(progressKey)) || 0;
 
@@ -287,7 +299,6 @@ class PodcastApp {
                 }
             };
 
-            // Сохраняем прогресс каждые 5 секунд
             this.audioPlayer.ontimeupdate = () => {
                 this.updateProgress();
                 const key = `progress_${url}`;
@@ -365,7 +376,6 @@ class PodcastApp {
         }
         this.updateTimeDisplay();
 
-        // Автоматически играть следующий в плейлисте
         const currentIndex = this.playlist.findIndex(p => p.url === this.currentTrack?.url);
         if (currentIndex !== -1 && currentIndex < this.playlist.length - 1) {
             const next = this.playlist[currentIndex + 1];
@@ -398,108 +408,46 @@ class PodcastApp {
         this.updatePlayButton();
     }
 
-    // ==================== ИНИЦИАЛИЗАЦИЯ (обновлённая) ====================
+    // ==================== ПОИСК И ПАГИНАЦИЯ ====================
 
-    async init() {
-        // ... существующие обработчики ...
-        if (this.searchBtn) {
-            this.searchBtn.addEventListener('click', () => this.search());
+    /**
+     * Основной метод поиска
+     */
+    async search(query) {
+        // Если query не передан, берём из поля ввода
+        if (query === undefined) {
+            query = this.searchInput?.value?.trim() || 'podcast';
         }
-        if (this.searchInput) {
-            this.searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.search();
-            });
-            const debouncedSearch = debounce(() => this.search(), 500);
-            this.searchInput.addEventListener('input', debouncedSearch);
-        }
-
-        // Обработчики плеера
-        if (this.audioPlayer) {
-            this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
-            this.audioPlayer.addEventListener('ended', () => this.onAudioEnd());
-            this.audioPlayer.addEventListener('loadedmetadata', () => this.updateTimeDisplay());
-        }
-
-        if (this.progressBar) {
-            this.progressBar.addEventListener('input', (e) => {
-                this.isDragging = true;
-            });
-            this.progressBar.addEventListener('change', (e) => {
-                if (this.audioPlayer && this.audioPlayer.duration) {
-                    const value = parseFloat(e.target.value);
-                    this.audioPlayer.currentTime = (value / 100) * this.audioPlayer.duration;
-                    const key = `progress_${this.currentTrack?.url}`;
-                    if (key) {
-                        localStorage.setItem(key, String(this.audioPlayer.currentTime));
-                    }
-                }
-                this.isDragging = false;
-            });
-        }
-
-        // Громкость
-        if (this.volumeControl) {
-            this.volumeControl.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value) / 100;
-                this.setVolume(val);
-            });
-        }
-
-        // Инициализация API
-        const initialized = await this.api.init(API_BASE);
-        if (initialized) {
-            this.updateStatus('✅ Готов', 'success');
-            this.search();
-            this.updateFavoritesUI();
-            this.updatePlaylistUI();
-        } else {
-            this.updateStatus('❌ Ошибка', 'danger');
-            this.resultsList.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Не удалось инициализировать Podcast Index API.
-                        <br /><small>Проверьте ключи на сервере</small>
-                    </div>
-                </div>
-            `;
-        }
-        console.log('✅ Приложение инициализировано');
-    }
-
-    // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
-
-    updateStatus(message, type = 'success') {
-        if (!this.status) return;
-        const dot = this.status.querySelector('.status-dot');
-        const text = this.status.querySelector('.status-text');
-        if (dot) dot.className = `status-dot bg-${type}`;
-        if (text) text.textContent = message;
-    }
-
-    updateStats(data) {
-        const feeds = data.feeds || [];
-        if (this.totalResults) this.totalResults.textContent = feeds.length || 0;
-    }
-
-    showLoading(show) {
-        if (this.loading) this.loading.style.display = show ? 'block' : 'none';
-    }
-
-    toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-    }
-
-    // ==================== SEARCH ====================
-
-    async search() {
-        const query = this.searchInput?.value?.trim() || 'podcast';
+        
+        this.currentQuery = query;
+        
+        // Сбрасываем состояние пагинации при новом поиске
+        this.currentOffset = 0;
+        this.allFeeds = [];
+        this.hasMore = true;
+        this.isLoadingMore = false;
+        this.totalResultsCount = 0;
+        
         this.showLoading(true);
-        if (this.resultsList) this.resultsList.innerHTML = '';
+        if (this.resultsList) {
+            this.resultsList.innerHTML = '';
+        }
+
         try {
-            const data = await this.api.search(query, 20);
-            this.renderResults(data);
-            this.updateStats(data);
+            const data = await this.api.search(
+                this.currentQuery, 
+                this.resultsPerPage, 
+                this.currentOffset
+            );
+            
+            this.totalResultsCount = data.count || data.feeds?.length || 0;
+            this.allFeeds = data.feeds || [];
+            this.hasMore = this.allFeeds.length >= this.resultsPerPage;
+            this.currentOffset = this.allFeeds.length;
+            
+            this.renderResults(this.allFeeds, true);
+            this.updateStats(this.totalResultsCount, this.allFeeds.length);
+            this.renderLoadMoreButton();
         } catch (error) {
             console.error('❌ Ошибка поиска:', error);
             if (this.resultsList) {
@@ -517,16 +465,112 @@ class PodcastApp {
             }
         } finally {
             this.showLoading(false);
+            this.isLoadingMore = false;
         }
     }
 
-    // ==================== RENDER RESULTS ====================
+    /**
+     * Загрузка следующей порции результатов
+     */
+    async loadMore() {
+        if (this.isLoadingMore || !this.hasMore) return;
+        
+        this.isLoadingMore = true;
+        
+        try {
+            const loadMoreBtn = document.querySelector('.load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Загрузка...';
+            }
 
-    renderResults(data) {
-        const feeds = data.feeds || [];
-        this.currentResults = feeds;
+            const data = await this.api.search(
+                this.currentQuery, 
+                this.resultsPerPage, 
+                this.currentOffset
+            );
+            
+            const newFeeds = data.feeds || [];
+            if (newFeeds.length > 0) {
+                this.allFeeds = [...this.allFeeds, ...newFeeds];
+                this.currentOffset += newFeeds.length;
+                this.hasMore = newFeeds.length >= this.resultsPerPage;
+                
+                this.renderResults(newFeeds, false);
+                this.renderLoadMoreButton();
+                this.updateStats(this.totalResultsCount, this.allFeeds.length);
+            } else {
+                this.hasMore = false;
+                this.renderLoadMoreButton();
+            }
+        } catch (error) {
+            console.error('❌ Ошибка загрузки ещё:', error);
+            if (this.resultsList) {
+                const errorEl = document.createElement('div');
+                errorEl.className = 'col-12';
+                errorEl.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Не удалось загрузить ещё: ${error.message}
+                    </div>
+                `;
+                this.resultsList.appendChild(errorEl);
+            }
+        } finally {
+            this.isLoadingMore = false;
+            const loadMoreBtn = document.querySelector('.load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = false;
+                this.renderLoadMoreButton();
+            }
+        }
+    }
+
+    /**
+     * Рендер кнопки "Загрузить ещё"
+     */
+    renderLoadMoreButton() {
+        const oldBtn = document.querySelector('.load-more-container');
+        if (oldBtn) {
+            oldBtn.remove();
+        }
+
+        if (!this.hasMore) {
+            if (this.allFeeds.length > 0 && this.allFeeds.length >= this.resultsPerPage) {
+                const container = document.createElement('div');
+                container.className = 'col-12 load-more-container text-center my-3';
+                container.innerHTML = `
+                    <p class="text-muted small">
+                        <i class="fas fa-check-circle text-success"></i>
+                        Все ${this.totalResultsCount} подкастов загружены
+                    </p>
+                `;
+                this.resultsList.appendChild(container);
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'col-12 load-more-container text-center my-3';
+        
+        const remaining = this.totalResultsCount - this.allFeeds.length;
+        const remainingText = remaining > 0 ? ` (осталось ${remaining})` : '';
+        
+        container.innerHTML = `
+            <button class="btn btn-outline-primary load-more-btn" onclick="app.loadMore()" ${this.isLoadingMore ? 'disabled' : ''}>
+                ${this.isLoadingMore ? '<span class="spinner-border spinner-border-sm" role="status"></span> Загрузка...' : `Загрузить ещё ${remainingText}`}
+            </button>
+        `;
+        
+        this.resultsList.appendChild(container);
+    }
+
+    // ==================== ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ ====================
+
+    renderResults(feeds, replace = true) {
         if (!this.resultsList) return;
-        if (feeds.length === 0) {
+        
+        if (feeds.length === 0 && this.allFeeds.length === 0) {
             this.resultsList.innerHTML = `
                 <div class="col-12">
                     <div class="alert alert-info">Ничего не найдено</div>
@@ -535,59 +579,75 @@ class PodcastApp {
             return;
         }
 
-        this.resultsList.innerHTML = feeds.map(feed => {
-            const isFav = this.isFavorite(feed.id);
-            return `
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card podcast-card h-100" onclick="app.showDetails(${feed.id})">
-                    ${feed.image ? `
-                        <img src="${feed.image}"
-                             class="card-img-top"
-                             alt="${feed.title}"
-                             loading="lazy"
-                             onerror="this.style.display='none'">
-                    ` : `
-                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                             style="height: 150px; color: #6c757d;">
-                            <i class="fas fa-podcast fa-3x"></i>
-                        </div>
-                    `}
-                    <div class="card-body">
-                        <h6 class="card-title text-truncate" title="${feed.title || 'Без названия'}">
-                            ${feed.title || 'Без названия'}
-                        </h6>
-                        ${feed.author ? `
-                            <p class="card-text small text-muted text-truncate">
-                                <i class="fas fa-user"></i> ${feed.author}
-                            </p>
-                        ` : ''}
-                        <p class="card-text small">
-                            ${truncateText(feed.description || '', 80)}
+        if (replace) {
+            this.resultsList.innerHTML = '';
+        }
+
+        feeds.forEach(feed => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4 mb-3';
+            col.innerHTML = this.createPodcastCard(feed);
+            this.resultsList.appendChild(col);
+        });
+
+        this.renderLoadMoreButton();
+    }
+
+    /**
+     * Создание HTML для карточки подкаста
+     */
+    createPodcastCard(feed) {
+        const isFav = this.isFavorite(feed.id);
+        return `
+            <div class="card podcast-card h-100" onclick="app.showDetails(${feed.id})">
+                ${feed.image ? `
+                    <img src="${feed.image}"
+                         class="card-img-top"
+                         alt="${feed.title}"
+                         loading="lazy"
+                         onerror="this.style.display='none'">
+                ` : `
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                         style="height: 150px; color: #6c757d;">
+                        <i class="fas fa-podcast fa-3x"></i>
+                    </div>
+                `}
+                <div class="card-body">
+                    <h6 class="card-title text-truncate" title="${feed.title || 'Без названия'}">
+                        ${feed.title || 'Без названия'}
+                    </h6>
+                    ${feed.author ? `
+                        <p class="card-text small text-muted text-truncate">
+                            <i class="fas fa-user"></i> ${feed.author}
                         </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                ${feed.language ? `
-                                    <span class="badge bg-secondary">${feed.language.toUpperCase()}</span>
-                                ` : ''}
-                            </div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm ${isFav ? 'btn-warning' : 'btn-outline-secondary'}"
-                                        onclick="event.stopPropagation(); app.toggleFavorite(${feed.id})">
-                                    <i class="fas fa-star"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary view-details"
-                                        onclick="event.stopPropagation(); app.showDetails(${feed.id})">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
+                    ` : ''}
+                    <p class="card-text small">
+                        ${truncateText(feed.description || '', 80)}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            ${feed.language ? `
+                                <span class="badge bg-secondary">${feed.language.toUpperCase()}</span>
+                            ` : ''}
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm favorite-btn ${isFav ? 'btn-warning' : 'btn-outline-secondary'}"
+                                    data-id="${feed.id}"
+                                    onclick="event.stopPropagation(); app.toggleFavorite('${feed.id}')">
+                                <i class="fas fa-star"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary view-details"
+                                    onclick="event.stopPropagation(); app.showDetails(${feed.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        `}).join('');
+        `;
     }
 
-    // ==================== SHOW DETAILS ====================
+    // ==================== ДЕТАЛИ ПОДКАСТА ====================
 
     async showDetails(id) {
         if (!id || !this.detailsDiv) return;
@@ -649,7 +709,7 @@ class PodcastApp {
         }
     }
 
-    // ==================== SHOW EPISODES ====================
+    // ==================== ЭПИЗОДЫ ====================
 
     async showEpisodes(id) {
         if (!id || !this.detailsDiv) return;
@@ -722,6 +782,102 @@ class PodcastApp {
                 </button>
             `;
         }
+    }
+
+    // ==================== СТАТУС И СТАТИСТИКА ====================
+
+    updateStatus(message, type = 'success') {
+        if (!this.status) return;
+        const dot = this.status.querySelector('.status-dot');
+        const text = this.status.querySelector('.status-text');
+        if (dot) dot.className = `status-dot bg-${type}`;
+        if (text) text.textContent = message;
+    }
+
+    updateStats(total, loaded) {
+        if (this.totalResults) {
+            this.totalResults.textContent = `${loaded || 0} / ${total || 0}`;
+        }
+    }
+
+    showLoading(show) {
+        if (this.loading) {
+            this.loading.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+    }
+
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+    async init() {
+        // Обработчики поиска
+        if (this.searchBtn) {
+            this.searchBtn.addEventListener('click', () => this.search());
+        }
+        if (this.searchInput) {
+            this.searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.search();
+            });
+            const debouncedSearch = debounce(() => this.search(), 500);
+            this.searchInput.addEventListener('input', debouncedSearch);
+        }
+
+        // Обработчики плеера
+        if (this.audioPlayer) {
+            this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
+            this.audioPlayer.addEventListener('ended', () => this.onAudioEnd());
+            this.audioPlayer.addEventListener('loadedmetadata', () => this.updateTimeDisplay());
+        }
+
+        if (this.progressBar) {
+            this.progressBar.addEventListener('input', (e) => {
+                this.isDragging = true;
+            });
+            this.progressBar.addEventListener('change', (e) => {
+                if (this.audioPlayer && this.audioPlayer.duration) {
+                    const value = parseFloat(e.target.value);
+                    this.audioPlayer.currentTime = (value / 100) * this.audioPlayer.duration;
+                    const key = `progress_${this.currentTrack?.url}`;
+                    if (key && this.currentTrack) {
+                        localStorage.setItem(key, String(this.audioPlayer.currentTime));
+                    }
+                }
+                this.isDragging = false;
+            });
+        }
+
+        if (this.volumeControl) {
+            this.volumeControl.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value) / 100;
+                this.setVolume(val);
+            });
+        }
+
+        // Инициализация API
+        const initialized = await this.api.init(API_BASE);
+        if (initialized) {
+            this.updateStatus('✅ Готов', 'success');
+            this.search();
+            this.updateFavoritesUI();
+            this.updatePlaylistUI();
+        } else {
+            this.updateStatus('❌ Ошибка', 'danger');
+            if (this.resultsList) {
+                this.resultsList.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Не удалось инициализировать Podcast Index API.
+                            <br /><small>Проверьте ключи на сервере</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        console.log('✅ Приложение инициализировано');
     }
 }
 

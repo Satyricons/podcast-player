@@ -1,3 +1,9 @@
+// public/js/podcast-index-api.js
+
+/**
+ * Клиент для Podcast Index API
+ * Использует Web Crypto API + SHA-1 для аутентификации
+ */
 export class PodcastIndexAPI {
     constructor() {
         this.apiKey = null;
@@ -7,6 +13,9 @@ export class PodcastIndexAPI {
         this.initError = null;
     }
 
+    /**
+     * Инициализация с ключами из сервера
+     */
     async init(apiBase) {
         try {
             console.log('🔑 Запрос ключей Podcast Index...');
@@ -34,6 +43,9 @@ export class PodcastIndexAPI {
         }
     }
 
+    /**
+     * Проверка инициализации
+     */
     ensureInitialized() {
         if (!this.isInitialized || !this.apiKey || !this.apiSecret) {
             throw new Error('Podcast Index API не инициализирован');
@@ -41,16 +53,31 @@ export class PodcastIndexAPI {
         return true;
     }
 
+    /**
+     * Генерация SHA-1 подписи через Web Crypto API
+     */
     async generateAuthHeaders() {
         this.ensureInitialized();
+
+        // Шаг 1: Время в секундах (НЕ миллисекундах!)
         const apiHeaderTime = Math.round(Date.now() / 1000).toString();
+        
+        // Шаг 2: Конкатенация (без пробелов!)
         const payload = this.apiKey + this.apiSecret + apiHeaderTime;
+        
+        // Шаг 3: Преобразование в Uint8Array
         const encoder = new TextEncoder();
         const data = encoder.encode(payload);
+        
+        // Шаг 4: SHA-1 через Web Crypto API
         const digest = await crypto.subtle.digest('SHA-1', data);
+        
+        // Шаг 5: Преобразование ArrayBuffer в hex-строку
         const hex = [...new Uint8Array(digest)]
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
+        
+        // Шаг 6: Возвращаем заголовки
         return {
             'X-Auth-Date': apiHeaderTime,
             'X-Auth-Key': this.apiKey,
@@ -58,6 +85,9 @@ export class PodcastIndexAPI {
         };
     }
 
+    /**
+     * Выполнение запроса к API
+     */
     async request(endpoint, params = {}) {
         this.ensureInitialized();
         const urlPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -88,14 +118,24 @@ export class PodcastIndexAPI {
         }
     }
 
-    async search(query, max = 20) {
+    /**
+     * Поиск подкастов с пагинацией
+     */
+    async search(query, max = 20, offset = 0) {
         if (!query) throw new Error('Поисковый запрос не может быть пустым');
-        console.log(`🔍 Поиск: "${query}"...`);
-        const result = await this.request('search/byterm', { q: query, max: max });
-        console.log(`✅ Найдено: ${result.feeds?.length || 0} подкастов`);
+        console.log(`🔍 Поиск: "${query}" (offset: ${offset})...`);
+        const result = await this.request('search/byterm', { 
+            q: query, 
+            max: max,
+            offset: offset 
+        });
+        console.log(`✅ Найдено: ${result.feeds?.length || 0} подкастов, всего: ${result.count || 0}`);
         return result;
     }
 
+    /**
+     * Получение подкаста по ID
+     */
     async getPodcast(feedId) {
         if (!feedId) throw new Error('ID подкаста обязателен');
         console.log(`📻 Получение подкаста ID: ${feedId}...`);
@@ -104,6 +144,9 @@ export class PodcastIndexAPI {
         return result;
     }
 
+    /**
+     * Получение эпизодов подкаста
+     */
     async getEpisodes(feedId, max = 10) {
         if (!feedId) throw new Error('ID подкаста обязателен');
         console.log(`🎧 Получение эпизодов для ID: ${feedId}...`);
@@ -112,6 +155,9 @@ export class PodcastIndexAPI {
         return result;
     }
 
+    /**
+     * Получение топ-подкастов
+     */
     async getTopPodcasts(max = 20) {
         console.log('🏆 Получение популярных подкастов...');
         const result = await this.request('podcasts/top', { max: max });
@@ -120,4 +166,5 @@ export class PodcastIndexAPI {
     }
 }
 
+// Создаём и экспортируем единственный экземпляр
 export const podcastAPI = new PodcastIndexAPI();
