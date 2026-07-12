@@ -1,7 +1,7 @@
 import { PodcastIndexAPI } from './podcast-index-api.js';
 import { formatDuration, formatTime, truncateText, debounce } from './utils/helpers.js';
 
-const API_BASE = 'https://podcast-player-backend.onrender.com/'; // Замените на ваш URL на Render
+const API_BASE = 'https://podcast-player-backend.onrender.com'; // Замените на ваш URL на Render
 
 class PodcastApp {
     constructor() {
