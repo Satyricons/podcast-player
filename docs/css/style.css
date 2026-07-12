@@ -313,3 +313,57 @@ body.dark-theme .favorite-item {
         transform: translateY(0);
     }
 }
+
+/* === ИЗБРАННОЕ === */
+#favoritesList {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+#favoritesList::-webkit-scrollbar {
+    width: 4px;
+}
+#favoritesList::-webkit-scrollbar-thumb {
+    background: #ced4da;
+    border-radius: 4px;
+}
+#favoritesList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.favorite-item {
+    transition: background 0.2s ease;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.favorite-item:hover {
+    background: #f1f3f5;
+}
+
+body.dark-theme .favorite-item:hover {
+    background: #2a2a4a;
+}
+
+.favorite-item img {
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+/* Toast уведомления */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Счётчик избранного */
+#favoritesCount {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+}
