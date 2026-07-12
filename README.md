@@ -96,7 +96,7 @@ https://github.com/rolling-scopes-school/tasks/blob/master/stage0.5%20Bootcamp/t
 6.	Заголовки	X-Auth-Date, X-Auth-Key, Authorization
 
 
-Итог:
+Функционал:
 
 1. Podcast Index API с SHA-1	✅ Работает
 
@@ -113,3 +113,7 @@ https://github.com/rolling-scopes-school/tasks/blob/master/stage0.5%20Bootcamp/t
 7. Тёмная тема	✅ Работает
 
 8. Адаптивность	✅ Работает
+
+9. LocalStorage ✅ Работает
+
+
