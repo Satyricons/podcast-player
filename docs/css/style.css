@@ -94,6 +94,7 @@ body.dark-theme #playerContainer {
     background-color: #ffc107;
 }
 
+/* === АУДИОПЛЕЕР В ШАПКЕ === */
 .audio-player-container {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
@@ -127,6 +128,34 @@ body.dark-theme #playerContainer {
     white-space: nowrap;
 }
 
+/* === СОСТОЯНИЯ КНОПКИ PLAY/PAUSE === */
+#playPauseBtn {
+    transition: opacity 0.2s ease;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#playPauseBtn.opacity-50 {
+    opacity: 0.5;
+}
+
+#playPauseBtn:disabled {
+    cursor: not-allowed;
+}
+
+#playPauseBtn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* === ЭПИЗОДЫ === */
 .episode-item {
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -152,30 +181,20 @@ body.dark-theme #playerContainer {
     overflow-y: auto;
 }
 
+/* АНИМАЦИИ */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 .podcast-card {
     animation: fadeIn 0.3s ease-out;
 }
 
+/* АДАПТИВ */
 @media (max-width: 768px) {
     .podcast-card .card-img-top {
         height: 120px;
@@ -202,4 +221,52 @@ body.dark-theme #playerContainer {
     .audio-player-container .form-range {
         width: 100px;
     }
+}
+
+/* Добавьте в конец файла */
+
+/* === ПЛЕЙЛИСТ === */
+.playlist-item {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.playlist-item:hover {
+    background: #f1f3f5;
+}
+body.dark-theme .playlist-item:hover {
+    background: #2a2a4a;
+}
+
+/* === ИЗБРАННОЕ === */
+.favorite-item {
+    border-bottom: 1px solid #e9ecef;
+    padding: 4px 0;
+}
+body.dark-theme .favorite-item {
+    border-bottom-color: #2a2a4a;
+}
+
+/* === СКОРОСТЬ === */
+.speed-btn {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+}
+.speed-btn.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: #fff;
+}
+
+/* === ГРОМКОСТЬ === */
+#volumeControl {
+    width: 60px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+#volumeControl::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
 }
