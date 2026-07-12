@@ -35,7 +35,7 @@ class PodcastApp {
         this.isDragging = false;
         this.playbackRate = 1;
         this.playlist = [];
-        this.favorites = new Set();
+        this.favorites = []; // массив объектов { id, title, image, author }
 
         // === ПАГИНАЦИЯ ===
         this.currentQuery = '';
@@ -83,7 +83,7 @@ class PodcastApp {
 
             const savedFavorites = localStorage.getItem('favorites');
             if (savedFavorites) {
-                this.favorites = new Set(JSON.parse(savedFavorites));
+                this.favorites = JSON.parse(savedFavorites);
             }
         } catch (e) {
             console.warn('Ошибка загрузки из localStorage:', e);
@@ -95,7 +95,7 @@ class PodcastApp {
             localStorage.setItem('playlist', JSON.stringify(this.playlist));
             localStorage.setItem('playbackRate', String(this.playbackRate));
             localStorage.setItem('volume', String(this.audioPlayer ? this.audioPlayer.volume : 0.8));
-            localStorage.setItem('favorites', JSON.stringify([...this.favorites]));
+            localStorage.setItem('favorites', JSON.stringify(this.favorites));
         } catch (e) {
             console.warn('Ошибка сохранения в localStorage:', e);
         }
@@ -108,21 +108,28 @@ class PodcastApp {
             this.playlist.push(item);
             this.saveToStorage();
             this.updatePlaylistUI();
+            this.showToast(`➕ "${item.title}" добавлен в плейлист`);
         }
     }
 
     removeFromPlaylist(index) {
+        const title = this.playlist[index]?.title || 'Эпизод';
         this.playlist.splice(index, 1);
         this.saveToStorage();
         this.updatePlaylistUI();
+        this.showToast(`❌ "${title}" удалён из плейлиста`);
     }
 
     clearPlaylist() {
-        this.playlist = [];
-        this.saveToStorage();
-        this.updatePlaylistUI();
-        const modal = bootstrap.Modal.getInstance(document.getElementById('playlistModal'));
-        if (modal) modal.hide();
+        if (this.playlist.length === 0) return;
+        if (confirm('Очистить весь плейлист?')) {
+            this.playlist = [];
+            this.saveToStorage();
+            this.updatePlaylistUI();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('playlistModal'));
+            if (modal) modal.hide();
+            this.showToast('🗑️ Плейлист очищен');
+        }
     }
 
     togglePlaylist() {
@@ -159,52 +166,151 @@ class PodcastApp {
         }
     }
 
-    // ==================== ИЗБРАННОЕ ====================
+    // ==================== ИЗБРАННОЕ (обновлённое) ====================
 
-    toggleFavorite(podcastId) {
-        if (this.favorites.has(podcastId)) {
-            this.favorites.delete(podcastId);
+    toggleFavorite(podcast) {
+        const id = podcast.id || podcast;
+        const index = this.favorites.findIndex(f => f.id === id);
+        
+        if (index !== -1) {
+            this.favorites.splice(index, 1);
+            this.showToast(`❌ "${podcast.title || 'Подкаст'}" удалён из избранного`);
         } else {
-            this.favorites.add(podcastId);
+            this.favorites.push({
+                id: id,
+                title: podcast.title || 'Без названия',
+                image: podcast.image || '',
+                author: podcast.author || 'Автор неизвестен'
+            });
+            this.showToast(`⭐ "${podcast.title || 'Подкаст'}" добавлен в избранное`);
         }
+        
         this.saveToStorage();
         this.updateFavoritesUI();
-        // Обновляем карточки, если они есть на странице
         this.updateFavoriteButtons();
     }
 
     isFavorite(podcastId) {
-        return this.favorites.has(podcastId);
+        return this.favorites.some(f => f.id === podcastId);
+    }
+
+    getFavorite(podcastId) {
+        return this.favorites.find(f => f.id === podcastId);
     }
 
     updateFavoritesUI() {
         const container = document.getElementById('favoritesList');
+        const countBadge = document.getElementById('favoritesCount');
         if (!container) return;
 
-        if (this.favorites.size === 0) {
-            container.innerHTML = '<small class="text-muted">Нет избранных подкастов</small>';
+        if (countBadge) {
+            countBadge.textContent = this.favorites.length;
+        }
+
+        if (this.favorites.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-star fa-2x mb-2"></i>
+                    <p class="small mb-0">Нет избранных подкастов</p>
+                    <p class="small">Добавляйте подкасты, нажимая на ⭐</p>
+                </div>
+            `;
             return;
         }
 
-        container.innerHTML = [...this.favorites].map(id => `
-            <div class="favorite-item d-flex justify-content-between align-items-center p-1">
-                <span class="small">ID: ${id}</span>
-                <button class="btn btn-sm btn-outline-danger" onclick="app.toggleFavorite('${id}')">
-                    <i class="fas fa-star text-warning"></i>
+        container.innerHTML = this.favorites.map(item => `
+            <div class="favorite-item d-flex align-items-center gap-2 p-2 border-bottom" 
+                 onclick="app.showDetails('${item.id}')" style="cursor: pointer;">
+                ${item.image ? `
+                    <img src="${item.image}" 
+                         class="rounded" 
+                         style="width: 40px; height: 40px; object-fit: cover;"
+                         onerror="this.style.display='none'">
+                ` : `
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                         style="width: 40px; height: 40px; flex-shrink: 0;">
+                        <i class="fas fa-podcast text-secondary"></i>
+                    </div>
+                `}
+                <div class="flex-grow-1 min-width-0">
+                    <div class="small fw-bold text-truncate">${item.title}</div>
+                    <div class="small text-muted text-truncate">${item.author}</div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger flex-shrink-0" 
+                        onclick="event.stopPropagation(); app.toggleFavorite({id: '${item.id}', title: '${item.title}'})">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         `).join('');
+
+        if (this.favorites.length > 0) {
+            container.innerHTML += `
+                <div class="text-center mt-2">
+                    <button class="btn btn-sm btn-outline-danger" onclick="app.clearFavorites()">
+                        <i class="fas fa-trash"></i> Очистить всё
+                    </button>
+                </div>
+            `;
+        }
     }
 
     updateFavoriteButtons() {
-        // Обновляем все кнопки избранного на странице
         document.querySelectorAll('.favorite-btn').forEach(btn => {
             const id = btn.dataset.id;
             const isFav = this.isFavorite(id);
             btn.classList.toggle('btn-warning', isFav);
             btn.classList.toggle('btn-outline-secondary', !isFav);
             btn.innerHTML = `<i class="fas fa-star"></i>`;
+            btn.title = isFav ? 'Удалить из избранного' : 'Добавить в избранное';
         });
+    }
+
+    clearFavorites() {
+        if (this.favorites.length === 0) return;
+        if (confirm('Удалить все подкасты из избранного?')) {
+            this.favorites = [];
+            this.saveToStorage();
+            this.updateFavoritesUI();
+            this.updateFavoriteButtons();
+            this.showToast('🗑️ Избранное очищено');
+        }
+    }
+
+    showToast(message) {
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 9999;
+                max-width: 350px;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast show';
+        toast.style.cssText = `
+            background: #333;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease-out;
+            font-size: 14px;
+        `;
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     // ==================== СКОРОСТЬ И ГРОМКОСТЬ ====================
@@ -410,18 +516,12 @@ class PodcastApp {
 
     // ==================== ПОИСК И ПАГИНАЦИЯ ====================
 
-    /**
-     * Основной метод поиска
-     */
     async search(query) {
-        // Если query не передан, берём из поля ввода
         if (query === undefined) {
             query = this.searchInput?.value?.trim() || 'podcast';
         }
         
         this.currentQuery = query;
-        
-        // Сбрасываем состояние пагинации при новом поиске
         this.currentOffset = 0;
         this.allFeeds = [];
         this.hasMore = true;
@@ -469,9 +569,6 @@ class PodcastApp {
         }
     }
 
-    /**
-     * Загрузка следующей порции результатов
-     */
     async loadMore() {
         if (this.isLoadingMore || !this.hasMore) return;
         
@@ -526,9 +623,6 @@ class PodcastApp {
         }
     }
 
-    /**
-     * Рендер кнопки "Загрузить ещё"
-     */
     renderLoadMoreButton() {
         const oldBtn = document.querySelector('.load-more-container');
         if (oldBtn) {
@@ -593,9 +687,6 @@ class PodcastApp {
         this.renderLoadMoreButton();
     }
 
-    /**
-     * Создание HTML для карточки подкаста
-     */
     createPodcastCard(feed) {
         const isFav = this.isFavorite(feed.id);
         return `
@@ -633,7 +724,7 @@ class PodcastApp {
                         <div class="d-flex gap-1">
                             <button class="btn btn-sm favorite-btn ${isFav ? 'btn-warning' : 'btn-outline-secondary'}"
                                     data-id="${feed.id}"
-                                    onclick="event.stopPropagation(); app.toggleFavorite('${feed.id}')">
+                                    onclick="event.stopPropagation(); app.toggleFavorite({id: '${feed.id}', title: '${feed.title || 'Без названия'}', image: '${feed.image || ''}', author: '${feed.author || ''}'})">
                                 <i class="fas fa-star"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-primary view-details"
@@ -696,7 +787,7 @@ class PodcastApp {
                         <i class="fas fa-list"></i> Эпизоды
                     </button>
                     <button class="btn btn-sm ${isFav ? 'btn-warning' : 'btn-outline-secondary'}"
-                            onclick="app.toggleFavorite(${feed.id})">
+                            onclick="app.toggleFavorite({id: '${feed.id}', title: '${feed.title || 'Без названия'}', image: '${feed.image || ''}', author: '${feed.author || ''}'})">
                         <i class="fas fa-star"></i> ${isFav ? 'В избранном' : 'В избранное'}
                     </button>
                 </div>
@@ -813,7 +904,6 @@ class PodcastApp {
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
     async init() {
-        // Обработчики поиска
         if (this.searchBtn) {
             this.searchBtn.addEventListener('click', () => this.search());
         }
@@ -825,7 +915,6 @@ class PodcastApp {
             this.searchInput.addEventListener('input', debouncedSearch);
         }
 
-        // Обработчики плеера
         if (this.audioPlayer) {
             this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
             this.audioPlayer.addEventListener('ended', () => this.onAudioEnd());
@@ -856,7 +945,6 @@ class PodcastApp {
             });
         }
 
-        // Инициализация API
         const initialized = await this.api.init(API_BASE);
         if (initialized) {
             this.updateStatus('✅ Готов', 'success');

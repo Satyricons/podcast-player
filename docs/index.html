@@ -24,41 +24,27 @@
                 <!-- АУДИОПЛЕЕР В ШАПКЕ -->
                 <div class="audio-player-container ms-auto" id="headerPlayer" style="display: none;">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <!-- Кнопка Play/Pause -->
                         <button class="btn btn-sm btn-outline-light" id="playPauseBtn" onclick="app.togglePlay()" disabled>
                             <i class="fas fa-play"></i>
                         </button>
-                        
-                        <!-- Название трека -->
                         <span class="text-white small" id="currentTrackTitle">Нет трека</span>
-                        
-                        <!-- Прогресс-бар -->
                         <input type="range" class="form-range" id="progressBar" min="0" max="100" value="0" style="width: 150px;" />
-                        
-                        <!-- Время -->
                         <span class="text-white small" id="timeDisplay">0:00 / 0:00</span>
-                        
-                        <!-- Скорость воспроизведения -->
                         <div class="btn-group btn-group-sm" id="speedGroup">
                             <button class="btn btn-outline-light speed-btn active" data-speed="1" onclick="app.setPlaybackRate(1)">1x</button>
                             <button class="btn btn-outline-light speed-btn" data-speed="1.5" onclick="app.setPlaybackRate(1.5)">1.5x</button>
                             <button class="btn btn-outline-light speed-btn" data-speed="2" onclick="app.setPlaybackRate(2)">2x</button>
                         </div>
-                        
-                        <!-- Громкость -->
                         <div class="d-flex align-items-center gap-1">
                             <i class="fas fa-volume-up text-white small" id="volumeIcon"></i>
                             <input type="range" class="form-range" id="volumeControl" min="0" max="100" value="80" style="width: 60px;" />
                         </div>
-                        
-                        <!-- Кнопка закрытия -->
                         <button class="btn btn-sm btn-outline-light" onclick="app.stopAudio()">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
                 
-                <!-- Переключение темы -->
                 <button class="btn btn-sm btn-outline-light ms-2" onclick="app.toggleTheme()">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -74,7 +60,7 @@
                 <div class="card shadow-sm mb-3">
                     <div class="card-body">
                         <div class="row g-2">
-                            <div class="col-md-6">
+                            <div class="col-md-5">
                                 <input type="text" class="form-control" id="searchInput" placeholder="Поиск подкастов..." value="technology" />
                             </div>
                             <div class="col-md-3">
@@ -82,7 +68,7 @@
                                     <i class="fas fa-search"></i> Найти
                                 </button>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <button class="btn btn-outline-secondary w-100" id="playlistToggle" onclick="app.togglePlaylist()">
                                     <i class="fas fa-list"></i> Плейлист
                                     <span class="badge bg-danger ms-1" id="playlistCount">0</span>
@@ -132,12 +118,19 @@
                     </div>
                 </div>
 
-                <!-- Избранное -->
+                <!-- ИЗБРАННОЕ (обновлённое) -->
                 <div class="card mt-3">
                     <div class="card-body">
-                        <h6><i class="fas fa-star text-warning"></i> Избранное</h6>
+                        <h6>
+                            <i class="fas fa-star text-warning"></i> Избранное
+                            <span class="badge bg-secondary float-end" id="favoritesCount">0</span>
+                        </h6>
                         <div id="favoritesList">
-                            <small class="text-muted">Нет избранных подкастов</small>
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-star fa-2x mb-2"></i>
+                                <p class="small mb-0">Нет избранных подкастов</p>
+                                <p class="small">Добавляйте подкасты, нажимая на ⭐</p>
+                            </div>
                         </div>
                     </div>
                 </div>
