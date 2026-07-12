@@ -23,7 +23,7 @@ console.log(`   API Key: ${API_KEY.substring(0, 8)}...`);
 console.log(`   API Secret: ${API_SECRET.substring(0, 8)}...`);
 
 // Статика
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'docs')));
 
 // Эндпоинт для передачи ключей
 app.get('/api/keys', (req, res) => {
@@ -86,7 +86,7 @@ app.get('/api/proxy/*', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'docs', 'index.html'));
 });
 
 app.listen(PORT, () => {
